@@ -202,14 +202,13 @@ export const SettingsModal: React.FC = () => {
                       {sub.name}
                     </span>
                   </div>
-                  {subjects.length > 1 && (
-                    <button
-                      onClick={() => deleteSubject(sub.id)}
-                      className="p-1 text-zinc-400 hover:text-rose-500 transition"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => deleteSubject(sub.id)}
+                    className="p-1 text-zinc-400 hover:text-rose-500 transition"
+                    title={`Delete ${sub.name}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
             </div>

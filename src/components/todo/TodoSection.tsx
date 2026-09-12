@@ -12,21 +12,23 @@ import {
   Plus,
   Check,
   X,
-  RefreshCw,
   FolderPlus,
   Folder,
   CheckCircle2,
   PenLine,
+  Trash2,
 } from 'lucide-react';
 import { RevisionPlanType, Task, Subject } from '../../types';
 import { triggerHaptic } from '../../utils/audio';
 import { TaskItemCard } from './TaskItemCard';
 import { ProgressTrackerView } from './ProgressTrackerView';
+import { RenameModal } from './RenameModal';
 
 export const TodoSection: React.FC = () => {
   const {
     tasks,
     subjects,
+    topics,
     addSubject,
     editSubject,
     deleteSubject,
@@ -88,11 +90,6 @@ export const TodoSection: React.FC = () => {
 
   // Drag-and-drop sortable state
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
-
-  // Swipe-down / Pull-to-refresh state
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const touchStartY = useRef<number | null>(null);
 
   // Separated Progress Tracker view selection toggle (beside active count)
   const [isTrackerView, setIsTrackerView] = useState(false);
@@ -285,39 +282,11 @@ export const TodoSection: React.FC = () => {
     setDraggedTaskId(null);
   };
 
-  // Pull-to-refresh touch handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY <= 5) {
-      touchStartY.current = e.touches[0].clientY;
-    } else {
-      touchStartY.current = null;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartY.current === null) return;
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - touchStartY.current;
-    if (diff > 0) {
-      // Apply rubberband damping
-      setPullDistance(Math.min(diff * 0.4, 75));
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (pullDistance > 45) {
-      setIsRefreshing(true);
-      triggerHaptic('success');
-      setTimeout(() => {
-        setIsRefreshing(false);
-        setPullDistance(0);
-        touchStartY.current = null;
-      }, 600);
-    } else {
-      setPullDistance(0);
-      touchStartY.current = null;
-    }
-  };
+  const [renamingTarget, setRenamingTarget] = useState<{
+    type: 'subject' | 'list';
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Common task item props
   const getTaskItemProps = (task: Task) => ({
@@ -363,32 +332,7 @@ export const TodoSection: React.FC = () => {
   });
 
   return (
-    <div
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      className="max-w-2xl mx-auto px-3 sm:px-6 pt-3 pb-32 space-y-4 animate-in fade-in duration-300 relative"
-    >
-      {/* Swipe-down / Pull to Refresh Indicator */}
-      {(pullDistance > 0 || isRefreshing) && (
-        <div
-          style={{ height: isRefreshing ? 48 : pullDistance }}
-          className="flex items-center justify-center overflow-hidden transition-all duration-200"
-        >
-          <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md shadow-sm border border-black/5 dark:border-white/10 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-            <RefreshCw
-              className={`w-3.5 h-3.5 text-blue-500 ${
-                isRefreshing ? 'animate-spin' : ''
-              }`}
-              style={{
-                transform: !isRefreshing ? `rotate(${pullDistance * 4}deg)` : undefined,
-              }}
-            />
-            <span>{isRefreshing ? 'Updated' : 'Pull to refresh'}</span>
-          </div>
-        </div>
-      )}
-
+    <div className="max-w-2xl mx-auto px-3 sm:px-6 pt-3 pb-32 space-y-4 animate-in fade-in duration-300 relative">
       {/* 1. Custom List Tabs ("Task Due", "Daily Task" and clean custom lists) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -468,10 +412,11 @@ export const TodoSection: React.FC = () => {
                           label: 'Rename Subject',
                           icon: 'edit' as const,
                           onSelect: () => {
-                            const newName = prompt('Enter new subject name:', subject.name);
-                            if (newName && newName.trim()) {
-                              editSubject(subject.id, newName.trim(), subject.color);
-                            }
+                            setRenamingTarget({
+                              type: 'subject',
+                              id: subject.id,
+                              name: subject.name,
+                            });
                           },
                         },
                         {
@@ -484,22 +429,16 @@ export const TodoSection: React.FC = () => {
                             navigator.clipboard?.writeText(text);
                           },
                         },
-                        ...(subjects.length > 1
-                          ? [
-                              {
-                                id: 'delete-sub',
-                                label: 'Delete Subject Folder',
-                                icon: 'delete' as const,
-                                danger: true,
-                                onSelect: () => {
-                                  if (confirm(`Delete subject folder "${subject.name}"?`)) {
-                                    deleteSubject(subject.id);
-                                    if (activeListId === subject.id) setActiveListId('all');
-                                  }
-                                },
-                              },
-                            ]
-                          : []),
+                        {
+                          id: 'delete-sub',
+                          label: 'Delete Subject Folder',
+                          icon: 'delete' as const,
+                          danger: true,
+                          onSelect: () => {
+                            deleteSubject(subject.id);
+                            if (activeListId === subject.id) setActiveListId('all');
+                          },
+                        },
                       ],
                     });
                   }}
@@ -559,10 +498,11 @@ export const TodoSection: React.FC = () => {
                           label: 'Rename List',
                           icon: 'edit',
                           onSelect: () => {
-                            const newName = prompt('Enter new list name:', list.name);
-                            if (newName && newName.trim()) {
-                              renameCustomList(list.id, newName.trim());
-                            }
+                            setRenamingTarget({
+                              type: 'list',
+                              id: list.id,
+                              name: list.name,
+                            });
                           },
                         },
                         {
@@ -713,18 +653,19 @@ export const TodoSection: React.FC = () => {
           onCopyList={copyListTasksToClipboard}
           onRenameList={
             activeCustomList
-              ? id => {
-                  const newName = prompt('Enter new list name:', activeCustomList.name);
-                  if (newName && newName.trim()) renameCustomList(id, newName.trim());
+              ? () => {
+                  setRenamingTarget({
+                    type: 'list',
+                    id: activeCustomList.id,
+                    name: activeCustomList.name,
+                  });
                 }
               : undefined
           }
           onDeleteList={
             activeCustomList
               ? id => {
-                  if (confirm(`Delete list "${activeCustomList.name}"?`)) {
-                    deleteCustomList(id);
-                  }
+                  deleteCustomList(id);
                 }
               : undefined
           }
@@ -1003,6 +944,24 @@ export const TodoSection: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Clean In-App Rename Modal for Subjects & Custom Lists */}
+      {renamingTarget && (
+        <RenameModal
+          isOpen={true}
+          title={`Rename ${renamingTarget.type === 'subject' ? 'Subject' : 'List'}`}
+          initialValue={renamingTarget.name}
+          onSave={newName => {
+            if (renamingTarget.type === 'subject') {
+              const subj = subjects.find(s => s.id === renamingTarget.id);
+              if (subj) editSubject(subj.id, newName, subj.color);
+            } else {
+              renameCustomList(renamingTarget.id, newName);
+            }
+          }}
+          onClose={() => setRenamingTarget(null)}
+        />
       )}
     </div>
   );

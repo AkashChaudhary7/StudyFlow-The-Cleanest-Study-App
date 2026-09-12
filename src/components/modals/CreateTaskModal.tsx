@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { RevisionPlanType } from '../../types';
+import { RevisionPlanType, Priority } from '../../types';
 import { getTodayStr, addDays } from '../../utils/dateUtils';
-import { X, Calendar, RotateCw, Sparkles } from 'lucide-react';
+import { X, Calendar, RotateCw, Sparkles, Flag } from 'lucide-react';
 import { triggerHaptic } from '../../utils/audio';
 
 export const CreateTaskModal: React.FC = () => {
@@ -28,6 +28,7 @@ export const CreateTaskModal: React.FC = () => {
   const [recurring, setRecurring] = useState<'none' | 'daily' | 'weekly' | 'monthly' | 'custom'>('none');
   const [repeatCustomDays, setRepeatCustomDays] = useState<number>(2);
   const [revisionPlan, setRevisionPlan] = useState<RevisionPlanType>('none');
+  const [priority, setPriority] = useState<Priority>('none');
 
   const today = getTodayStr();
   const tomorrow = addDays(today, 1);
@@ -47,6 +48,7 @@ export const CreateTaskModal: React.FC = () => {
         setRecurring(task.recurring || 'none');
         setRepeatCustomDays(task.repeatCustomDays || 2);
         setRevisionPlan(task.revisionPlan || 'none');
+        setPriority(task.priority || 'none');
       }
     } else {
       setItemType('task');
@@ -56,6 +58,7 @@ export const CreateTaskModal: React.FC = () => {
       setRecurring(activeListId === 'daily' ? 'daily' : 'none');
       setRepeatCustomDays(2);
       setRevisionPlan('none');
+      setPriority('none');
     }
   }, [editingTaskId, activeModal, tasks, activeListId, createTaskPreset]);
 
@@ -85,12 +88,13 @@ export const CreateTaskModal: React.FC = () => {
         recurring: recurring !== 'none' ? recurring : undefined,
         repeatCustomDays: recurring === 'custom' ? Math.max(1, Number(repeatCustomDays) || 1) : undefined,
         revisionPlan: revisionPlan !== 'none' ? revisionPlan : undefined,
+        priority,
       });
     } else {
       addTask({
         title: title.trim(),
         dueDate: dueDate || undefined,
-        priority: 'none',
+        priority,
         completed: false,
         subjectId: createTaskPreset?.subjectId,
         listId: activeListId !== 'all' && activeListId !== 'daily' ? activeListId : undefined,
@@ -270,6 +274,75 @@ export const CreateTaskModal: React.FC = () => {
                     <span className="text-xs text-zinc-500">days</span>
                   </div>
                 )}
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label className="flex items-center text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+                  <Flag className="w-3 h-3 mr-1" />
+                  Priority
+                </label>
+                <div className="grid grid-cols-4 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('toggle');
+                      setPriority('none');
+                    }}
+                    className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition ${
+                      priority === 'none'
+                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs'
+                        : 'bg-black/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-400 hover:bg-black/10 dark:hover:bg-white/10'
+                    }`}
+                  >
+                    None
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('toggle');
+                      setPriority('low');
+                    }}
+                    className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1 ${
+                      priority === 'low'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span>Low</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('toggle');
+                      setPriority('medium');
+                    }}
+                    className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1 ${
+                      priority === 'medium'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span>Medium</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('toggle');
+                      setPriority('high');
+                    }}
+                    className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1 ${
+                      priority === 'high'
+                        ? 'bg-rose-600 text-white shadow-xs'
+                        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                    <span>High</span>
+                  </button>
+                </div>
               </div>
 
               {/* Revision */}

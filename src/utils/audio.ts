@@ -74,13 +74,13 @@ export function playTimerCompleteChime() {
   }
 }
 
-export type HapticType = 'light' | 'medium' | 'heavy' | 'success' | 'toggle';
+export type HapticType = 'light' | 'medium' | 'heavy' | 'success' | 'toggle' | 'selection';
 
 export function triggerHaptic(type: HapticType = 'light') {
   // 1. Browser Vibration API
   if (typeof window !== 'undefined' && 'vibrate' in navigator) {
     try {
-      if (type === 'light') {
+      if (type === 'light' || type === 'selection') {
         navigator.vibrate(10);
       } else if (type === 'medium') {
         navigator.vibrate(22);

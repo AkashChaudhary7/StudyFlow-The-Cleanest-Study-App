@@ -916,9 +916,7 @@ export const StudySection: React.FC = () => {
 
                               <button
                                 onClick={() => {
-                                  if (confirm(`Delete topic "${topic.title}"?`)) {
-                                    deleteTopic(topic.id);
-                                  }
+                                  deleteTopic(topic.id);
                                 }}
                                 className="p-1 text-zinc-400 hover:text-rose-500 transition"
                                 title="Delete topic"

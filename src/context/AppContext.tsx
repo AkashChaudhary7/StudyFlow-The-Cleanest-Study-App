@@ -67,6 +67,8 @@ interface AppContextType {
   addTask: (task: Omit<Task, 'id' | 'createdAt'>) => Task;
   editTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
+  deleteTasks: (ids: string[]) => void;
+  bulkUpdateTasks: (ids: string[], updates: Partial<Task>) => void;
   reorderTasks: (newTasks: Task[]) => void;
   toggleTaskCompleted: (id: string) => void;
   toggleTaskRevisionStep: (taskId: string, stepNumber: number) => void;
@@ -674,6 +676,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteTask = (id: string) => {
     triggerHaptic('light');
     setTasks(prev => prev.filter(t => t.id !== id));
+  };
+
+  const deleteTasks = (ids: string[]) => {
+    if (!ids || ids.length === 0) return;
+    triggerHaptic('medium');
+    const setIds = new Set(ids);
+    setTasks(prev => prev.filter(t => !setIds.has(t.id)));
+  };
+
+  const bulkUpdateTasks = (ids: string[], updates: Partial<Task>) => {
+    if (!ids || ids.length === 0) return;
+    triggerHaptic('success');
+    const setIds = new Set(ids);
+    setTasks(prev => prev.map(t => (setIds.has(t.id) ? { ...t, ...updates } : t)));
   };
 
   const reorderTasks = (newTasks: Task[]) => {
@@ -1305,11 +1321,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteSubject = (id: string) => {
-    if (subjects.length <= 1) return; // Keep at least 1 subject
     setSubjects(prev => prev.filter(s => s.id !== id));
+    // Clean up subjectId on tasks so they don't have broken references
+    setTasks(prev =>
+      prev.map(t => (t.subjectId === id ? { ...t, subjectId: undefined } : t))
+    );
+    // Clean up subjectId on topics
+    setTopics(prev =>
+      prev.map(tp => (tp.subjectId === id ? { ...tp, subjectId: '' } : tp))
+    );
     if (activeListId === id) {
       setActiveListId('all');
     }
+    triggerHaptic('success');
   };
 
   // Sessions
@@ -1571,6 +1595,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addTask,
         editTask,
         deleteTask,
+        deleteTasks,
+        bulkUpdateTasks,
         reorderTasks,
         toggleTaskCompleted,
         toggleTaskRevisionStep,

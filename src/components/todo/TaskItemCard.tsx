@@ -8,7 +8,7 @@ import {
   X,
   GripVertical,
 } from 'lucide-react';
-import { RevisionPlanType, Task } from '../../types';
+import { RevisionPlanType, Task, Priority } from '../../types';
 import { formatFriendlyDate } from '../../utils/dateUtils';
 import { triggerHaptic } from '../../utils/audio';
 import { useApp } from '../../context/AppContext';
@@ -88,6 +88,7 @@ export const TaskItemCard: React.FC<TaskItemCardProps> = ({
   const {
     openQuickActions,
     tasks,
+    editTask,
     editSubject,
     deleteSubject,
     openModal,
@@ -96,6 +97,15 @@ export const TaskItemCard: React.FC<TaskItemCardProps> = ({
     moveSubtaskUp,
     moveSubtaskDown,
   } = useApp();
+
+  const cyclePriority = () => {
+    const current = task.priority || 'none';
+    const order: Priority[] = ['none', 'low', 'medium', 'high'];
+    const nextIdx = (order.indexOf(current) + 1) % order.length;
+    const nextPriority = order[nextIdx];
+    triggerHaptic('success');
+    editTask(task.id, { priority: nextPriority });
+  };
 
   const isAddingSubtask = addingSubtaskForTaskId === task.id;
   const subject = subjects.find(s => s.id === task.subjectId);
@@ -150,6 +160,51 @@ export const TaskItemCard: React.FC<TaskItemCardProps> = ({
           label: 'Edit Task',
           icon: 'edit',
           onSelect: () => onEditTask(task.id),
+        },
+        {
+          id: 'change-priority',
+          label: `Priority: ${task.priority && task.priority !== 'none' ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : 'None'} (Change)`,
+          icon: 'star',
+          onSelect: () => {
+            openQuickActions({
+              title: 'Set Task Priority',
+              subtitle: task.title,
+              actions: [
+                {
+                  id: 'p-high',
+                  label: '🔥 High Priority',
+                  onSelect: () => {
+                    triggerHaptic('success');
+                    editTask(task.id, { priority: 'high' });
+                  },
+                },
+                {
+                  id: 'p-med',
+                  label: '⚡ Medium Priority',
+                  onSelect: () => {
+                    triggerHaptic('success');
+                    editTask(task.id, { priority: 'medium' });
+                  },
+                },
+                {
+                  id: 'p-low',
+                  label: '💧 Low Priority',
+                  onSelect: () => {
+                    triggerHaptic('success');
+                    editTask(task.id, { priority: 'low' });
+                  },
+                },
+                {
+                  id: 'p-none',
+                  label: '○ Clear Priority (None)',
+                  onSelect: () => {
+                    triggerHaptic('light');
+                    editTask(task.id, { priority: 'none' });
+                  },
+                },
+              ],
+            });
+          },
         },
         {
           id: 'toggle-task',
@@ -249,7 +304,6 @@ export const TaskItemCard: React.FC<TaskItemCardProps> = ({
       {/* Task Main Row */}
       <div className="p-3 flex items-center justify-between gap-2.5">
         <div className="flex items-center space-x-2.5 min-w-0 flex-1">
-          {/* Checkbox button with Subtle Circular Progress Ring */}
           <div className="relative w-7 h-7 shrink-0 flex items-center justify-center">
             <svg
               width="28"
@@ -324,6 +378,41 @@ export const TaskItemCard: React.FC<TaskItemCardProps> = ({
             >
               {task.title}
             </span>
+
+            {/* Priority Indicator Badge (High, Medium, Low) */}
+            {task.priority && task.priority !== 'none' && (
+              <span
+                onClick={e => {
+                  e.stopPropagation();
+                  cyclePriority();
+                }}
+                className={`inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 transition hover:scale-105 active:scale-95 cursor-pointer select-none ${
+                  task.priority === 'high'
+                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                    : task.priority === 'medium'
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                }`}
+                title={`Priority: ${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} (Click to cycle)`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    task.priority === 'high'
+                      ? 'bg-rose-500'
+                      : task.priority === 'medium'
+                      ? 'bg-amber-500'
+                      : 'bg-blue-500'
+                  }`}
+                />
+                <span>
+                  {task.priority === 'high'
+                    ? 'High'
+                    : task.priority === 'medium'
+                    ? 'Medium'
+                    : 'Low'}
+                </span>
+              </span>
+            )}
 
             {/* Subject Badge with Mini Circular Progress Ring */}
             {subject && (
@@ -429,6 +518,53 @@ export const TaskItemCard: React.FC<TaskItemCardProps> = ({
       {/* Expanded Details: Notes, Subtasks, and Subject Task Creator */}
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-black/5 dark:border-white/5 space-y-3 animate-in fade-in duration-200">
+          {/* Priority Quick Selector */}
+          <div className="flex items-center justify-between py-1 px-1 text-xs">
+            <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+              Priority
+            </span>
+            <div className="flex items-center space-x-1">
+              {(['none', 'low', 'medium', 'high'] as const).map(p => {
+                const isSelected = (task.priority || 'none') === p;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      triggerHaptic('toggle');
+                      editTask(task.id, { priority: p });
+                    }}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition flex items-center space-x-1 ${
+                      isSelected
+                        ? p === 'high'
+                          ? 'bg-rose-600 text-white shadow-xs'
+                          : p === 'medium'
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : p === 'low'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-zinc-800 text-white dark:bg-white dark:text-zinc-900 shadow-xs'
+                        : 'bg-black/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-400 hover:bg-black/10 dark:hover:bg-white/10'
+                    }`}
+                  >
+                    {p !== 'none' && (
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          p === 'high'
+                            ? isSelected ? 'bg-white' : 'bg-rose-500'
+                            : p === 'medium'
+                            ? isSelected ? 'bg-white' : 'bg-amber-500'
+                            : isSelected ? 'bg-white' : 'bg-blue-500'
+                        }`}
+                      />
+                    )}
+                    <span>{p === 'none' ? 'None' : p.charAt(0).toUpperCase() + p.slice(1)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Notes if present */}
           {task.notes && (
             <p className="text-xs text-zinc-500 dark:text-zinc-400 italic bg-black/5 dark:bg-white/5 p-2 rounded-xl">
