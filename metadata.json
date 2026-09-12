@@ -1,0 +1,6 @@
+{
+  "name": "StudyFlow: Spaced Revision & Timer",
+  "description": "A minimal, premium study companion combining Google Tasks simplicity, YPT-style study time analytics, and intelligent spaced repetition.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

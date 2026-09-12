@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#007AFF" />
+      <stop offset="50%" stop-color="#5856D6" />
+      <stop offset="100%" stop-color="#AF52DE" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+  
+  <!-- Background with Apple-like squircle radius -->
+  <rect width="512" height="512" rx="115" fill="url(#grad)" />
+  
+  <!-- Outer subtle circular orbit ring representing Spaced Repetition Cycles -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-dasharray="16 12" opacity="0.35" />
+  
+  <!-- Concentric focus ring -->
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#FFFFFF" stroke-width="6" opacity="0.5" />
+  
+  <!-- Central Focus & Flow Glyph (Layered Book / Checkmark & Spark) -->
+  <g filter="url(#shadow)">
+    <!-- Main central check / flow wave -->
+    <path d="M176 256 L232 312 L344 196" fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Top right flame / star spark -->
+    <path d="M352 140 C352 165 375 175 375 175 C375 175 352 185 352 210 C352 185 330 175 330 175 C330 175 352 165 352 140 Z" fill="#FFD60A" />
+  </g>
+</svg>
