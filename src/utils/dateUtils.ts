@@ -18,17 +18,23 @@ export function formatDateStr(date: Date): string {
 }
 
 export function parseDateStr(dateStr: string): Date {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d);
+  if (!dateStr || typeof dateStr !== 'string') return new Date();
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length !== 3 || isNaN(parts[0]) || isNaN(parts[1]) || isNaN(parts[2])) {
+    return new Date();
+  }
+  return new Date(parts[0], parts[1] - 1, parts[2]);
 }
 
 export function addDays(dateStr: string, days: number): string {
+  if (!dateStr) return getTodayStr();
   const d = parseDateStr(dateStr);
   d.setDate(d.getDate() + days);
   return formatDateStr(d);
 }
 
 export function diffDays(dateStrA: string, dateStrB: string): number {
+  if (!dateStrA || !dateStrB) return 0;
   const a = parseDateStr(dateStrA).getTime();
   const b = parseDateStr(dateStrB).getTime();
   const oneDay = 24 * 60 * 60 * 1000;

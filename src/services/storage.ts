@@ -48,20 +48,69 @@ export const INITIAL_TIMER_STATE: ActiveTimerState = {
   pomodoroCompletedCount: 0,
 };
 
+// In-memory fallback store for SSR, Node, Vitest, or restricted iframe/private mode environments
+const memoryStore = new Map<string, string>();
+
+function getStorageItem(key: string): string | null {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem(key);
+    }
+  } catch {
+    // Fallback on restricted storage
+  }
+  return memoryStore.get(key) ?? null;
+}
+
+function setStorageItem(key: string, value: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(key, value);
+      return;
+    }
+  } catch {
+    // Fallback on restricted storage
+  }
+  memoryStore.set(key, value);
+}
+
+function removeStorageItem(key: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(key);
+      return;
+    }
+  } catch {
+    // Fallback
+  }
+  memoryStore.delete(key);
+}
+
+function clearAllStorage(): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.clear();
+    }
+  } catch {
+    // Fallback
+  }
+  memoryStore.clear();
+}
+
 // Automatic one-time purge of legacy mock data (Computer Science, Mathematics, sample topics)
 try {
   const purgeKey = 'studyflow_mock_purged_v3';
-  if (typeof window !== 'undefined' && !localStorage.getItem(purgeKey)) {
-    localStorage.setItem(purgeKey, 'true');
-    const existingSubs = localStorage.getItem(STORAGE_KEYS.SUBJECTS);
+  if (!getStorageItem(purgeKey)) {
+    setStorageItem(purgeKey, 'true');
+    const existingSubs = getStorageItem(STORAGE_KEYS.SUBJECTS);
     if (existingSubs && (existingSubs.includes('sub-cs') || existingSubs.includes('Computer Science'))) {
-      localStorage.removeItem(STORAGE_KEYS.SUBJECTS);
-      localStorage.removeItem(STORAGE_KEYS.TOPICS);
-      localStorage.removeItem(STORAGE_KEYS.REVISIONS);
-      localStorage.removeItem(STORAGE_KEYS.TASKS);
-      localStorage.removeItem(STORAGE_KEYS.SESSIONS);
-      localStorage.removeItem(STORAGE_KEYS.QUICK_NOTES);
-      localStorage.removeItem(STORAGE_KEYS.CUSTOM_LISTS);
+      removeStorageItem(STORAGE_KEYS.SUBJECTS);
+      removeStorageItem(STORAGE_KEYS.TOPICS);
+      removeStorageItem(STORAGE_KEYS.REVISIONS);
+      removeStorageItem(STORAGE_KEYS.TASKS);
+      removeStorageItem(STORAGE_KEYS.SESSIONS);
+      removeStorageItem(STORAGE_KEYS.QUICK_NOTES);
+      removeStorageItem(STORAGE_KEYS.CUSTOM_LISTS);
     }
   }
 } catch {
@@ -83,9 +132,13 @@ function generateInitialData() {
 
 // Storage operations with fallback and auto-initialization
 export const storage = {
+  clearStorage(): void {
+    clearAllStorage();
+  },
+
   getSubjects(): Subject[] {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.SUBJECTS);
+      const raw = getStorageItem(STORAGE_KEYS.SUBJECTS);
       if (!raw) {
         const init = generateInitialData();
         storage.saveSubjects(init.subjects);
@@ -98,12 +151,12 @@ export const storage = {
   },
 
   saveSubjects(subjects: Subject[]): void {
-    localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(subjects));
+    setStorageItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(subjects));
   },
 
   getTopics(): StudyTopic[] {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.TOPICS);
+      const raw = getStorageItem(STORAGE_KEYS.TOPICS);
       if (!raw) {
         const init = generateInitialData();
         storage.saveTopics(init.topics);
@@ -116,12 +169,12 @@ export const storage = {
   },
 
   saveTopics(topics: StudyTopic[]): void {
-    localStorage.setItem(STORAGE_KEYS.TOPICS, JSON.stringify(topics));
+    setStorageItem(STORAGE_KEYS.TOPICS, JSON.stringify(topics));
   },
 
   getRevisions(): RevisionInstance[] {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.REVISIONS);
+      const raw = getStorageItem(STORAGE_KEYS.REVISIONS);
       if (!raw) {
         const init = generateInitialData();
         storage.saveRevisions(init.revisions);
@@ -134,12 +187,12 @@ export const storage = {
   },
 
   saveRevisions(revisions: RevisionInstance[]): void {
-    localStorage.setItem(STORAGE_KEYS.REVISIONS, JSON.stringify(revisions));
+    setStorageItem(STORAGE_KEYS.REVISIONS, JSON.stringify(revisions));
   },
 
   getTasks(): Task[] {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.TASKS);
+      const raw = getStorageItem(STORAGE_KEYS.TASKS);
       if (!raw) {
         const init = generateInitialData();
         storage.saveTasks(init.tasks);
@@ -152,12 +205,12 @@ export const storage = {
   },
 
   saveTasks(tasks: Task[]): void {
-    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+    setStorageItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
   },
 
   getSessions(): StudySession[] {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.SESSIONS);
+      const raw = getStorageItem(STORAGE_KEYS.SESSIONS);
       if (!raw) {
         const init = generateInitialData();
         storage.saveSessions(init.sessions);
@@ -170,12 +223,12 @@ export const storage = {
   },
 
   saveSessions(sessions: StudySession[]): void {
-    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    setStorageItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
   },
 
   getActiveTimer(): ActiveTimerState {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.ACTIVE_TIMER);
+      const raw = getStorageItem(STORAGE_KEYS.ACTIVE_TIMER);
       if (!raw) return INITIAL_TIMER_STATE;
       return JSON.parse(raw);
     } catch {
@@ -184,12 +237,12 @@ export const storage = {
   },
 
   saveActiveTimer(timer: ActiveTimerState): void {
-    localStorage.setItem(STORAGE_KEYS.ACTIVE_TIMER, JSON.stringify(timer));
+    setStorageItem(STORAGE_KEYS.ACTIVE_TIMER, JSON.stringify(timer));
   },
 
   getPreferences(): UserPreferences {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.PREFERENCES);
+      const raw = getStorageItem(STORAGE_KEYS.PREFERENCES);
       if (!raw) return DEFAULT_PREFERENCES;
       return { ...DEFAULT_PREFERENCES, ...JSON.parse(raw) };
     } catch {
@@ -198,12 +251,12 @@ export const storage = {
   },
 
   savePreferences(prefs: UserPreferences): void {
-    localStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(prefs));
+    setStorageItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(prefs));
   },
 
   getCustomLists(): CustomList[] {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_LISTS);
+      const raw = getStorageItem(STORAGE_KEYS.CUSTOM_LISTS);
       if (!raw) return [];
       return JSON.parse(raw);
     } catch {
@@ -212,12 +265,12 @@ export const storage = {
   },
 
   saveCustomLists(lists: CustomList[]): void {
-    localStorage.setItem(STORAGE_KEYS.CUSTOM_LISTS, JSON.stringify(lists));
+    setStorageItem(STORAGE_KEYS.CUSTOM_LISTS, JSON.stringify(lists));
   },
 
   getQuickNotes(): QuickNote[] {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.QUICK_NOTES);
+      const raw = getStorageItem(STORAGE_KEYS.QUICK_NOTES);
       if (!raw) {
         const init = generateInitialData();
         storage.saveQuickNotes(init.quickNotes);
@@ -230,11 +283,11 @@ export const storage = {
   },
 
   saveQuickNotes(notes: QuickNote[]): void {
-    localStorage.setItem(STORAGE_KEYS.QUICK_NOTES, JSON.stringify(notes));
+    setStorageItem(STORAGE_KEYS.QUICK_NOTES, JSON.stringify(notes));
   },
 
   resetAllData(): void {
-    localStorage.clear();
+    clearAllStorage();
     const init = generateInitialData();
     storage.saveSubjects(init.subjects);
     storage.saveTopics(init.topics);
@@ -242,6 +295,8 @@ export const storage = {
     storage.saveTasks(init.tasks);
     storage.saveSessions(init.sessions);
     storage.savePreferences(init.preferences);
+    storage.saveCustomLists(init.customLists);
+    storage.saveQuickNotes(init.quickNotes);
     storage.saveActiveTimer(INITIAL_TIMER_STATE);
   },
 
