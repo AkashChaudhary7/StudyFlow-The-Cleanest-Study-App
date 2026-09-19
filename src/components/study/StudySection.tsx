@@ -118,6 +118,7 @@ export const StudySection: React.FC = () => {
   };
 
   const toggleSubjectCollapse = (subId: string) => {
+    triggerHaptic('light');
     setCollapsedSubjects(prev => ({
       ...prev,
       [subId]: !prev[subId],
@@ -159,6 +160,7 @@ export const StudySection: React.FC = () => {
         <div className="p-1 rounded-full bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10 flex items-center space-x-1 shadow-xs">
           <button
             onClick={() => {
+              triggerHaptic('toggle');
               setStudyView('track_time');
               if (timerState.mode !== 'stopwatch' && !timerState.isRunning) {
                 setTimerMode('stopwatch');
@@ -176,6 +178,7 @@ export const StudySection: React.FC = () => {
 
           <button
             onClick={() => {
+              triggerHaptic('toggle');
               setStudyView('pomodoro');
               if (timerState.mode !== 'pomodoro' && !timerState.isRunning) {
                 setTimerMode('pomodoro');
@@ -556,7 +559,10 @@ export const StudySection: React.FC = () => {
             {/* Presets row: 25/5, 50/10 */}
             <div className="flex items-center space-x-2 mt-3">
               <button
-                onClick={() => setPomodoroPreset(25, 5)}
+                onClick={() => {
+                  triggerHaptic('light');
+                  setPomodoroPreset(25, 5);
+                }}
                 disabled={timerState.isRunning}
                 className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
                   timerState.pomodoroWorkDuration === 25 * 60
@@ -567,7 +573,10 @@ export const StudySection: React.FC = () => {
                 25 / 5 min
               </button>
               <button
-                onClick={() => setPomodoroPreset(50, 10)}
+                onClick={() => {
+                  triggerHaptic('light');
+                  setPomodoroPreset(50, 10);
+                }}
                 disabled={timerState.isRunning}
                 className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
                   timerState.pomodoroWorkDuration === 50 * 60
@@ -698,7 +707,10 @@ export const StudySection: React.FC = () => {
                 <button
                   key={color}
                   type="button"
-                  onClick={() => setNewSubjectColor(color)}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setNewSubjectColor(color);
+                  }}
                   className={`w-5 h-5 rounded-full transition-transform ${
                     newSubjectColor === color ? 'scale-125 ring-2 ring-blue-500' : ''
                   }`}
@@ -821,7 +833,10 @@ export const StudySection: React.FC = () => {
                         <button
                           key={plan}
                           type="button"
-                          onClick={() => setInlineRevisionPlan(plan)}
+                          onClick={() => {
+                            triggerHaptic('light');
+                            setInlineRevisionPlan(plan);
+                          }}
                           className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold capitalize ${
                             inlineRevisionPlan === plan
                               ? 'bg-blue-600 text-white'
